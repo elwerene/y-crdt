@@ -111,19 +111,16 @@ impl<'a> From<&'a mut Box<Branch>> for BranchPtr {
 impl<'a> From<&'a Box<Branch>> for BranchPtr {
     fn from(branch: &'a Box<Branch>) -> Self {
         let b: &Branch = &*branch;
-        
-            let ptr = unsafe { NonNull::new_unchecked(b as *const Branch as *mut Branch) };
-            BranchPtr(ptr)
-        
+
+        let ptr = unsafe { NonNull::new_unchecked(b as *const Branch as *mut Branch) };
+        BranchPtr(ptr)
     }
 }
 
 impl<'a> From<&'a Branch> for BranchPtr {
     fn from(branch: &'a Branch) -> Self {
-        
-            let ptr = unsafe { NonNull::new_unchecked(branch as *const Branch as *mut Branch) };
-            BranchPtr(ptr)
-        
+        let ptr = unsafe { NonNull::new_unchecked(branch as *const Branch as *mut Branch) };
+        BranchPtr(ptr)
     }
 }
 
@@ -285,7 +282,7 @@ impl Branch {
 
     /// Get iterator over (String, Block) entries of a map component of a current root type.
     /// Deleted blocks are skipped by this iterator.
-    pub(crate) fn entries(&self) -> Entries {
+    pub fn entries(&self) -> Entries {
         Entries::new(&self.map)
     }
 
