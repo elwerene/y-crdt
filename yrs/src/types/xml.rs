@@ -667,6 +667,11 @@ impl XmlText {
         self.0.inner()
     }
 
+    pub fn value(&self) -> Value {
+        let value: Value = self.inner().into();
+        value
+    }
+
     /// Returns a string representation of a current XML text.
     pub fn to_string(&self) -> String {
         self.0.to_string()
