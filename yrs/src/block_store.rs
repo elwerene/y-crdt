@@ -33,7 +33,7 @@ impl StateVector {
     }
 
     /// Calculates a state vector from a document's block store.
-    pub(crate) fn from(ss: &BlockStore) -> Self {
+    pub fn from(ss: &BlockStore) -> Self {
         let mut sv = StateVector::default();
         for (client_id, client_struct_list) in ss.clients.iter() {
             sv.0.insert(*client_id, client_struct_list.get_state());
@@ -149,7 +149,7 @@ impl Snapshot {
         }
     }
 
-    pub(crate) fn is_visible(&self, id: &ID) -> bool {
+    pub fn is_visible(&self, id: &ID) -> bool {
         self.state_map.contains(id) && !self.delete_set.is_deleted(id)
     }
 }
@@ -170,7 +170,7 @@ impl Decode for Snapshot {
 }
 
 /// A resizable list of blocks inserted by a single client.
-pub(crate) struct ClientBlockList {
+pub struct ClientBlockList {
     list: Vec<Box<block::Block>>,
 }
 
@@ -227,20 +227,20 @@ impl ClientBlockList {
     /// Returns first block on the list - since we only initialize [ClientBlockList]
     /// when we're sure, we're about to add new elements to it, it always should
     /// stay non-empty.
-    pub(crate) fn first(&self) -> BlockPtr {
+    pub fn first(&self) -> BlockPtr {
         self.get(0)
     }
 
     /// Returns last block on the list - since we only initialize [ClientBlockList]
     /// when we're sure, we're about to add new elements to it, it always should
     /// stay non-empty.
-    pub(crate) fn last(&self) -> BlockPtr {
+    pub fn last(&self) -> BlockPtr {
         self.get(self.len() - 1)
     }
 
     /// Given a block's identifier clock value, return an offset under which this block could be
     /// found using binary search algorithm.
-    pub(crate) fn find_pivot(&self, clock: u32) -> Option<usize> {
+    pub fn find_pivot(&self, clock: u32) -> Option<usize> {
         let mut left = 0;
         let mut right = self.list.len() - 1;
         let mut block = self.get(right);
@@ -276,13 +276,13 @@ impl ClientBlockList {
     /// list. Clocks are considered to work in left-side inclusive way, meaning that block with
     /// an ID (<client-id>, 0) and length 2, with contain all elements with clock values
     /// corresponding to {0,1} but not 2.
-    pub(crate) fn get_block(&self, clock: u32) -> Option<BlockPtr> {
+    pub fn get_block(&self, clock: u32) -> Option<BlockPtr> {
         let idx = self.find_pivot(clock)?;
         self.try_get(idx)
     }
 
     /// Pushes a new block at the end of this block list.
-    pub(crate) fn push(&mut self, block: Box<block::Block>) {
+    pub fn push(&mut self, block: Box<block::Block>) {
         self.list.push(block);
     }
 
@@ -297,7 +297,7 @@ impl ClientBlockList {
         self.list.len()
     }
 
-    pub(crate) fn iter(&self) -> ClientBlockListIter<'_> {
+    pub fn iter(&self) -> ClientBlockListIter<'_> {
         ClientBlockListIter(self.list.iter())
     }
 
@@ -306,7 +306,7 @@ impl ClientBlockList {
     /// squashed into its left neighbor. In such case a squash result will be returned in order to
     /// later on rewire left/right neighbor changes that may have occurred as a result of squashing
     /// and block removal.
-    pub(crate) fn squash_left(&mut self, index: usize) {
+    pub fn squash_left(&mut self, index: usize) {
         let (l, r) = self.list.split_at_mut(index);
         let mut left = BlockPtr::from(&mut l[index - 1]);
         let right = BlockPtr::from(&r[0]);
@@ -336,7 +336,7 @@ impl Default for ClientBlockList {
     }
 }
 
-pub(crate) struct ClientBlockListIter<'a>(std::slice::Iter<'a, Box<block::Block>>);
+pub struct ClientBlockListIter<'a>(std::slice::Iter<'a, Box<block::Block>>);
 
 impl<'a> Iterator for ClientBlockListIter<'a> {
     type Item = &'a Block;
@@ -351,11 +351,11 @@ impl<'a> Iterator for ClientBlockListIter<'a> {
 /// Blocks are organized per client ID and contain a resizable list of all blocks inserted by that
 /// client.
 #[derive(PartialEq)]
-pub(crate) struct BlockStore {
+pub struct BlockStore {
     clients: HashMap<ClientID, ClientBlockList, BuildHasherDefault<ClientHasher>>,
 }
 
-pub(crate) type Iter<'a> = std::collections::hash_map::Iter<'a, ClientID, ClientBlockList>;
+pub type Iter<'a> = std::collections::hash_map::Iter<'a, ClientID, ClientBlockList>;
 
 impl BlockStore {
     /// Creates a new empty block store instance.
@@ -397,7 +397,7 @@ impl BlockStore {
         self.clients.iter()
     }
 
-    pub(crate) fn blocks(&self) -> Blocks<'_> {
+    pub fn blocks(&self) -> Blocks<'_> {
         Blocks::new(self)
     }
 
@@ -411,13 +411,13 @@ impl BlockStore {
 
     /// Returns immutable reference to a block, given its pointer. Returns `None` if not such
     /// block could be found.
-    pub(crate) fn get_block(&self, id: &ID) -> Option<BlockPtr> {
+    pub fn get_block(&self, id: &ID) -> Option<BlockPtr> {
         let clients = self.clients.get(&id.client)?;
         let pivot = clients.find_pivot(id.clock)?;
         clients.try_get(pivot)
     }
 
-    pub(crate) fn get_item_clean_start(&mut self, id: &ID) -> Option<BlockPtr> {
+    pub fn get_item_clean_start(&mut self, id: &ID) -> Option<BlockPtr> {
         let blocks = self.clients.get_mut(&id.client)?;
         let mut index = blocks.find_pivot(id.clock)?;
         let mut ptr = blocks.get(index);
@@ -428,7 +428,7 @@ impl BlockStore {
         Some(blocks.get(index))
     }
 
-    pub(crate) fn get_item_clean_end(&mut self, id: &ID) -> Option<BlockPtr> {
+    pub fn get_item_clean_end(&mut self, id: &ID) -> Option<BlockPtr> {
         let blocks = self.clients.get_mut(&id.client)?;
         let index = blocks.find_pivot(id.clock)?;
         let mut block = blocks.get(index);
@@ -455,7 +455,7 @@ impl BlockStore {
 
     /// Returns a mutable reference to block list for the given `client`. In case when no such list
     /// existed, a new one will be created and returned.
-    pub(crate) fn get_client_blocks_mut(&mut self, client: ClientID) -> &mut ClientBlockList {
+    pub fn get_client_blocks_mut(&mut self, client: ClientID) -> &mut ClientBlockList {
         self.clients
             .entry(client)
             .or_insert_with(ClientBlockList::new)
@@ -463,7 +463,7 @@ impl BlockStore {
 
     /// Returns a mutable reference to block list for the given `client`. In case when no such list
     /// existed, a new one will be created with predefined `capacity` and returned.
-    pub(crate) fn get_client_blocks_with_capacity_mut(
+    pub fn get_client_blocks_with_capacity_mut(
         &mut self,
         client: ClientID,
         capacity: usize,
@@ -491,7 +491,7 @@ impl BlockStore {
         Some(right_ptr)
     }
 
-    pub(crate) fn split_block_inner(&mut self, block: BlockPtr, offset: u32) -> Option<BlockPtr> {
+    pub fn split_block_inner(&mut self, block: BlockPtr, offset: u32) -> Option<BlockPtr> {
         self.split_block(block, offset, OffsetKind::Utf16)
     }
 }
@@ -524,7 +524,7 @@ impl std::fmt::Display for BlockStore {
     }
 }
 
-pub(crate) struct Blocks<'a> {
+pub struct Blocks<'a> {
     current_client: std::vec::IntoIter<(&'a ClientID, &'a ClientBlockList)>,
     current_block: Option<ClientBlockListIter<'a>>,
 }

@@ -55,11 +55,7 @@ pub const TYPE_REFS_UNDEFINED: TypeRefs = 15;
 pub struct BranchPtr(NonNull<Branch>);
 
 impl BranchPtr {
-    pub(crate) fn trigger(
-        &self,
-        txn: &Transaction,
-        subs: HashSet<Option<Rc<str>>>,
-    ) -> Option<Event> {
+    pub fn trigger(&self, txn: &Transaction, subs: HashSet<Option<Rc<str>>>) -> Option<Event> {
         if let Some(observers) = self.observers.as_ref() {
             Some(observers.publish(*self, txn, subs))
         } else {
@@ -74,7 +70,7 @@ impl BranchPtr {
         }
     }
 
-    pub(crate) fn trigger_deep(&self, txn: &Transaction, e: &Events) {
+    pub fn trigger_deep(&self, txn: &Transaction, e: &Events) {
         if let Some(observers) = self.deep_observers.as_ref() {
             observers.publish(txn, e);
         }
@@ -183,7 +179,7 @@ pub struct Branch {
     ///   node.
     /// - [Text] and [XmlText]: this field point to a first chunk of text appended to collaborative
     ///   text data structure.
-    pub(crate) start: Option<BlockPtr>,
+    pub start: Option<BlockPtr>,
 
     /// A map component of this branch node, used by some of the specialized complex types
     /// including:
@@ -191,15 +187,15 @@ pub struct Branch {
     /// - [Map]: all of the map elements are based on this field. The value of each entry points
     ///   to the last modified value.
     /// - [XmlElement]: this field stores attributes assigned to a given XML node.
-    pub(crate) map: HashMap<Rc<str>, BlockPtr>,
+    pub map: HashMap<Rc<str>, BlockPtr>,
 
     /// Unique identifier of a current branch node. It can be contain either a named string - which
     /// means, this branch is a root-level complex data structure - or a block identifier. In latter
     /// case it means, that this branch is a complex type (eg. Map or Array) nested inside of
     /// another complex type.
-    pub(crate) item: Option<BlockPtr>,
+    pub item: Option<BlockPtr>,
 
-    pub(crate) store: Option<StoreRef>,
+    pub store: Option<StoreRef>,
 
     /// A tag name identifier, used only by [XmlElement].
     pub name: Option<Rc<str>>,
@@ -213,9 +209,9 @@ pub struct Branch {
     /// An identifier of an underlying complex data type (eg. is it an Array or a Map).
     type_ref: TypeRefs,
 
-    pub(crate) observers: Option<Observers>,
+    pub observers: Option<Observers>,
 
-    pub(crate) deep_observers: Option<EventHandler<Events>>,
+    pub deep_observers: Option<EventHandler<Events>>,
 }
 
 impl std::fmt::Debug for Branch {
@@ -253,7 +249,7 @@ impl Branch {
         })
     }
 
-    pub(crate) fn try_transact(&self) -> Option<Transaction> {
+    pub fn try_transact(&self) -> Option<Transaction> {
         let store = self.store.clone()?;
         Some(Transaction::new(store))
     }
@@ -263,7 +259,7 @@ impl Branch {
         self.type_ref & 0b1111
     }
 
-    pub(crate) fn repair_type_ref(&mut self, type_ref: TypeRefs) {
+    pub fn repair_type_ref(&mut self, type_ref: TypeRefs) {
         if self.type_ref() == TYPE_REFS_UNDEFINED {
             // cleanup the TYPE_REFS_UNDEFINED bytes and set a new type ref
             self.type_ref = (type_ref & (!TYPE_REFS_UNDEFINED)) | type_ref;
@@ -288,13 +284,13 @@ impl Branch {
 
     /// Get iterator over Block entries of an array component of a current root type.
     /// Deleted blocks are skipped by this iterator.
-    pub(crate) fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter {
         Iter::new(self.start.as_ref())
     }
 
     /// Returns a materialized value of non-deleted entry under a given `key` of a map component
     /// of a current root type.
-    pub(crate) fn get(&self, key: &str) -> Option<Value> {
+    pub fn get(&self, key: &str) -> Option<Value> {
         let block = self.map.get(key)?;
         match block.deref() {
             Block::Item(item) if !item.is_deleted() => item.content.get_last(),
@@ -307,7 +303,7 @@ impl Branch {
     /// location within wrapping item content.
     /// If `index` was outside of the array component boundary of current branch node, `None` will
     /// be returned.
-    pub(crate) fn get_at(&self, mut index: u32) -> Option<(&ItemContent, usize)> {
+    pub fn get_at(&self, mut index: u32) -> Option<(&ItemContent, usize)> {
         let mut ptr = self.start.as_ref();
         while let Some(Block::Item(item)) = ptr.map(BlockPtr::deref) {
             let len = item.len();
@@ -326,7 +322,7 @@ impl Branch {
 
     /// Removes an entry under given `key` of a map component of a current root type, returning
     /// a materialized representation of value stored underneath if entry existed prior deletion.
-    pub(crate) fn remove(&self, txn: &mut Transaction, key: &str) -> Option<Value> {
+    pub fn remove(&self, txn: &mut Transaction, key: &str) -> Option<Value> {
         let ptr = *self.map.get(key)?;
         let prev = match ptr.deref() {
             Block::Item(item) if !item.is_deleted() => item.content.get_last(),
@@ -337,7 +333,7 @@ impl Branch {
     }
 
     /// Returns a first non-deleted item from an array component of a current root type.
-    pub(crate) fn first(&self) -> Option<&Item> {
+    pub fn first(&self) -> Option<&Item> {
         let mut ptr = self.start.as_ref();
         while let Some(Block::Item(item)) = ptr.map(BlockPtr::deref) {
             if item.is_deleted() {
@@ -401,7 +397,7 @@ impl Branch {
     }
     /// Removes up to a `len` of countable elements from current branch sequence, starting at the
     /// given `index`. Returns number of removed elements.
-    pub(crate) fn remove_at(&self, txn: &mut Transaction, index: u32, len: u32) -> u32 {
+    pub fn remove_at(&self, txn: &mut Transaction, index: u32, len: u32) -> u32 {
         let mut remaining = len;
         let start = { self.start };
         let (_, mut ptr) = if index == 0 {
@@ -453,12 +449,7 @@ impl Branch {
 
     /// Inserts a preliminary `value` into a current branch indexed sequence component at the given
     /// `index`. Returns an item reference created as a result of this operation.
-    pub(crate) fn insert_at<V: Prelim>(
-        &self,
-        txn: &mut Transaction,
-        index: u32,
-        value: V,
-    ) -> BlockPtr {
+    pub fn insert_at<V: Prelim>(&self, txn: &mut Transaction, index: u32, value: V) -> BlockPtr {
         let (start, parent) = {
             if index <= self.len() {
                 (self.start, BranchPtr::from(self))
@@ -482,7 +473,7 @@ impl Branch {
         txn.create_item(&pos, value, None)
     }
 
-    pub(crate) fn path(from: BranchPtr, to: BranchPtr) -> Path {
+    pub fn path(from: BranchPtr, to: BranchPtr) -> Path {
         let parent = from;
         let mut child = to;
         let mut path = VecDeque::default();
@@ -759,12 +750,12 @@ impl std::fmt::Display for Branch {
     }
 }
 
-pub(crate) struct Entries<'a> {
+pub struct Entries<'a> {
     iter: std::collections::hash_map::Iter<'a, Rc<str>, BlockPtr>,
 }
 
 impl<'a> Entries<'a> {
-    pub(crate) fn new(source: &'a HashMap<Rc<str>, BlockPtr>) -> Self {
+    pub fn new(source: &'a HashMap<Rc<str>, BlockPtr>) -> Self {
         Entries {
             iter: source.iter(),
         }
@@ -794,7 +785,7 @@ impl<'a> Iterator for Entries<'a> {
     }
 }
 
-pub(crate) struct Iter<'a> {
+pub struct Iter<'a> {
     ptr: Option<&'a BlockPtr>,
 }
 
@@ -817,7 +808,7 @@ impl<'a> Iterator for Iter<'a> {
 
 /// Type pointer - used to localize a complex [Branch] node within a scope of a document store.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum TypePtr {
+pub enum TypePtr {
     /// Temporary value - used only when block is deserialized right away, but had not been
     /// integrated into block store yet. As part of block integration process, items are
     /// repaired and their fields (including parent) are being rewired.
@@ -834,7 +825,7 @@ pub(crate) enum TypePtr {
 }
 
 impl TypePtr {
-    pub(crate) fn as_branch(&self) -> Option<&BranchPtr> {
+    pub fn as_branch(&self) -> Option<&BranchPtr> {
         if let TypePtr::Branch(ptr) = self {
             Some(ptr)
         } else {
@@ -860,7 +851,7 @@ impl std::fmt::Display for TypePtr {
     }
 }
 
-pub(crate) enum Observers {
+pub enum Observers {
     Text(EventHandler<crate::types::text::TextEvent>),
     Array(EventHandler<crate::types::array::ArrayEvent>),
     Map(EventHandler<crate::types::map::MapEvent>),
@@ -938,7 +929,7 @@ pub enum PathSegment {
     Index(u32),
 }
 
-pub(crate) struct ChangeSet<D> {
+pub struct ChangeSet<D> {
     added: HashSet<ID>,
     deleted: HashSet<ID>,
     delta: Vec<D>,
@@ -1004,7 +995,7 @@ pub enum Delta {
 /// An alias for map of attributes used as formatting parameters by [Text] and [XmlText] types.
 pub type Attrs = HashMap<Rc<str>, Any>;
 
-pub(crate) fn event_keys(
+pub fn event_keys(
     txn: &Transaction,
     target: BranchPtr,
     keys_changed: &HashSet<Option<Rc<str>>>,
@@ -1057,7 +1048,7 @@ pub(crate) fn event_keys(
     keys
 }
 
-pub(crate) fn event_change_set(txn: &Transaction, start: Option<BlockPtr>) -> ChangeSet<Change> {
+pub fn event_change_set(txn: &Transaction, start: Option<BlockPtr>) -> ChangeSet<Change> {
     let mut added = HashSet::new();
     let mut deleted = HashSet::new();
     let mut delta = Vec::new();
@@ -1222,7 +1213,7 @@ pub(crate) fn event_change_set(txn: &Transaction, start: Option<BlockPtr>) -> Ch
 pub struct Events(Vec<NonNull<Event>>);
 
 impl Events {
-    pub(crate) fn new(events: &mut Vec<&Event>) -> Self {
+    pub fn new(events: &mut Vec<&Event>) -> Self {
         events.sort_by(|&a, &b| {
             let path1 = a.path();
             let path2 = b.path();
@@ -1271,7 +1262,7 @@ pub enum Event {
 }
 
 impl Event {
-    pub(crate) fn set_current_target(&mut self, target: BranchPtr) {
+    pub fn set_current_target(&mut self, target: BranchPtr) {
         match self {
             Event::Text(e) => e.current_target = target,
             Event::Array(e) => e.current_target = target,

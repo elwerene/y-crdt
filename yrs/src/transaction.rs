@@ -21,18 +21,18 @@ use updates::encoder::*;
 /// contents (a.k.a. block store), need to be executed in scope of a transaction.
 pub struct Transaction {
     /// Store containing the state of the document.
-    pub(crate) store: StoreRef,
+    pub store: StoreRef,
     /// State vector of a current transaction at the moment of its creation.
     pub before_state: StateVector,
     /// Current state vector of a transaction, which includes all performed updates.
     pub after_state: StateVector,
     /// ID's of the blocks to be merged.
-    pub(crate) merge_blocks: Vec<ID>,
+    pub merge_blocks: Vec<ID>,
     /// Describes the set of deleted items by ids.
     pub delete_set: DeleteSet,
     /// We store the reference that last moved an item. This is needed to compute the delta
     /// when multiple ContentMove move the same item.
-    pub(crate) prev_moved: HashMap<BlockPtr, BlockPtr>,
+    pub prev_moved: HashMap<BlockPtr, BlockPtr>,
     /// All types that were directly modified (property added or child inserted/deleted).
     /// New types are not included in this Set.
     changed: HashMap<TypePtr, HashSet<Option<Rc<str>>>>,
@@ -40,7 +40,7 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    pub(crate) fn new(store: StoreRef) -> Transaction {
+    pub fn new(store: StoreRef) -> Transaction {
         let begin_timestamp = store.blocks.get_state_vector();
         Transaction {
             store,
@@ -55,12 +55,12 @@ impl Transaction {
     }
 
     #[inline]
-    pub(crate) fn store(&self) -> &Store {
+    pub fn store(&self) -> &Store {
         &self.store
     }
 
     #[inline]
-    pub(crate) fn store_mut(&mut self) -> &mut Store {
+    pub fn store_mut(&mut self) -> &mut Store {
         &mut self.store
     }
 
@@ -236,7 +236,7 @@ impl Transaction {
 
     /// Applies given `id_set` onto current transaction to run multi-range deletion.
     /// Returns a remaining of original ID set, that couldn't be applied.
-    pub(crate) fn apply_delete(&mut self, ds: &DeleteSet) -> Option<DeleteSet> {
+    pub fn apply_delete(&mut self, ds: &DeleteSet) -> Option<DeleteSet> {
         let mut unapplied = DeleteSet::new();
         for (client, ranges) in ds.iter() {
             if let Some(mut blocks) = self.store_mut().blocks.get_mut(client) {
@@ -333,7 +333,7 @@ impl Transaction {
 
     /// Delete item under given pointer.
     /// Returns true if block was successfully deleted, false if it was already deleted in the past.
-    pub(crate) fn delete(&mut self, block: BlockPtr) -> bool {
+    pub fn delete(&mut self, block: BlockPtr) -> bool {
         let mut ptr = block;
         let mut recurse = Vec::new();
         let mut result = false;
@@ -455,7 +455,7 @@ impl Transaction {
         }
     }
 
-    pub(crate) fn create_item<T: Prelim>(
+    pub fn create_item<T: Prelim>(
         &mut self,
         pos: &block::ItemPosition,
         value: T,
@@ -661,7 +661,7 @@ impl Transaction {
         }
     }
 
-    pub(crate) fn add_changed_type(&mut self, parent: BranchPtr, parent_sub: Option<Rc<str>>) {
+    pub fn add_changed_type(&mut self, parent: BranchPtr, parent_sub: Option<Rc<str>>) {
         let trigger = if let Some(ptr) = parent.item {
             (ptr.id().clock < self.before_state.get(&ptr.id().client)) && !ptr.is_deleted()
         } else {
@@ -674,16 +674,16 @@ impl Transaction {
     }
 
     /// Checks if item with a given `id` has been added to a block store within this transaction.
-    pub(crate) fn has_added(&self, id: &ID) -> bool {
+    pub fn has_added(&self, id: &ID) -> bool {
         id.clock >= self.before_state.get(&id.client)
     }
 
     /// Checks if item with a given `id` has been deleted within this transaction.
-    pub(crate) fn has_deleted(&self, id: &ID) -> bool {
+    pub fn has_deleted(&self, id: &ID) -> bool {
         self.delete_set.is_deleted(id)
     }
 
-    pub(crate) fn split_by_snapshot(&mut self, snapshot: &Snapshot) {
+    pub fn split_by_snapshot(&mut self, snapshot: &Snapshot) {
         let mut merge_blocks: Vec<ID> = Vec::new();
         let blocks = &mut self.store.blocks;
         for (client, &clock) in snapshot.state_map.iter() {

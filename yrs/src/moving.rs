@@ -23,7 +23,7 @@ pub struct Move {
     /// This representation can be improved if we ever run into memory issues because of too many overrides.
     /// Ideally, we should probably just re-iterate the document and re-integrate all moved items.
     /// This is fast enough and reduces memory footprint significantly.
-    pub(crate) overrides: Option<HashSet<BlockPtr>>,
+    pub overrides: Option<HashSet<BlockPtr>>,
 }
 
 impl Move {
@@ -40,10 +40,7 @@ impl Move {
         self.start.id == self.end.id
     }
 
-    pub(crate) fn get_moved_coords(
-        &self,
-        txn: &mut Transaction,
-    ) -> (Option<BlockPtr>, Option<BlockPtr>) {
+    pub fn get_moved_coords(&self, txn: &mut Transaction) -> (Option<BlockPtr>, Option<BlockPtr>) {
         let start = Self::get_item_ptr(txn, &self.start.id, self.start.assoc);
         let end = Self::get_item_ptr(txn, &self.end.id, self.end.assoc);
         (start, end)
@@ -61,7 +58,7 @@ impl Move {
         }
     }
 
-    pub(crate) fn find_move_loop(
+    pub fn find_move_loop(
         &self,
         txn: &mut Transaction,
         moved: BlockPtr,
@@ -97,7 +94,7 @@ impl Move {
         e.insert(ptr);
     }
 
-    pub(crate) fn integrate_block(&mut self, txn: &mut Transaction, item: BlockPtr) {
+    pub fn integrate_block(&mut self, txn: &mut Transaction, item: BlockPtr) {
         let (init, end) = self.get_moved_coords(txn);
         let mut max_priority = 0i32;
         let adapt_priority = self.priority < 0;
@@ -177,7 +174,7 @@ impl Move {
         }
     }
 
-    pub(crate) fn delete(&self, txn: &mut Transaction, item: BlockPtr) {
+    pub fn delete(&self, txn: &mut Transaction, item: BlockPtr) {
         let (mut start, end) = self.get_moved_coords(txn);
         while start != end && start.is_some() {
             if let Some(start_ptr) = start {
@@ -321,11 +318,11 @@ pub struct RelativePosition {
 }
 
 impl RelativePosition {
-    pub(crate) fn create(id: ID, assoc: Assoc) -> Self {
+    pub fn create(id: ID, assoc: Assoc) -> Self {
         RelativePosition { id, assoc }
     }
 
-    pub(crate) fn from_type_index(
+    pub fn from_type_index(
         txn: &mut Transaction,
         branch: BranchPtr,
         mut index: u32,
@@ -358,7 +355,7 @@ impl RelativePosition {
         }
     }
 
-    pub(crate) fn within_range(&self, ptr: Option<BlockPtr>) -> bool {
+    pub fn within_range(&self, ptr: Option<BlockPtr>) -> bool {
         if !self.assoc {
             return false;
         } else if let Some(Block::Item(item)) = ptr.as_deref() {
@@ -386,7 +383,7 @@ impl std::fmt::Display for RelativePosition {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct AbsolutePosition {
+pub struct AbsolutePosition {
     branch: BranchPtr,
     index: u32,
     assoc: Assoc,

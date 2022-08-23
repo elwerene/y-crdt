@@ -16,7 +16,7 @@ use std::rc::Rc;
 /// Store is a core element of a document. It contains all of the information, like block store
 /// map of root types, pending updates waiting to be applied once a missing update information
 /// arrives and all subscribed callbacks.
-pub(crate) struct Store {
+pub struct Store {
     pub options: Options,
 
     /// Root types (a.k.a. top-level types). These types are defined by users at the document level,
@@ -26,7 +26,7 @@ pub(crate) struct Store {
 
     /// A block store of a current document. It represent all blocks (inserted or tombstoned
     /// operations) integrated - and therefore visible - into a current document.
-    pub(crate) blocks: BlockStore,
+    pub blocks: BlockStore,
 
     /// A pending update. It contains blocks, which are not yet integrated into `blocks`, usually
     /// because due to issues in update exchange, there were some missing blocks that need to be
@@ -40,15 +40,15 @@ pub(crate) struct Store {
 
     /// Handles subscriptions for the `afterTransactionCleanup` event. Events are called with the
     /// newest updates once they are committed and compacted.
-    pub(crate) after_transaction_events: Option<EventHandler<AfterTransactionEvent>>,
+    pub after_transaction_events: Option<EventHandler<AfterTransactionEvent>>,
 
     /// A subscription handler. It contains all callbacks with registered by user functions that
     /// are supposed to be called, once a new update arrives.
-    pub(crate) update_v1_events: Option<EventHandler<UpdateEvent>>,
+    pub update_v1_events: Option<EventHandler<UpdateEvent>>,
 
     /// A subscription handler. It contains all callbacks with registered by user functions that
     /// are supposed to be called, once a new update arrives.
-    pub(crate) update_v2_events: Option<EventHandler<UpdateEvent>>,
+    pub update_v2_events: Option<EventHandler<UpdateEvent>>,
 }
 
 impl Store {
@@ -105,7 +105,7 @@ impl Store {
         }
     }
 
-    pub(crate) fn get_type_key(&self, ptr: BranchPtr) -> Option<&Rc<str>> {
+    pub fn get_type_key(&self, ptr: BranchPtr) -> Option<&Rc<str>> {
         let branch = ptr.deref() as *const Branch;
         for (k, v) in self.types.iter() {
             let target = v.as_ref() as *const Branch;
@@ -134,7 +134,7 @@ impl Store {
         delete_set.encode(encoder);
     }
 
-    pub(crate) fn write_blocks<E: Encoder>(&self, remote_sv: &StateVector, encoder: &mut E) {
+    pub fn write_blocks<E: Encoder>(&self, remote_sv: &StateVector, encoder: &mut E) {
         let local_sv = self.blocks.get_state_vector();
         let mut diff = Self::diff_state_vectors(&local_sv, remote_sv);
 
@@ -249,7 +249,7 @@ impl std::fmt::Display for Store {
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
-pub(crate) struct StoreRef(Rc<UnsafeCell<Store>>);
+pub struct StoreRef(Rc<UnsafeCell<Store>>);
 
 impl Deref for StoreRef {
     type Target = Store;

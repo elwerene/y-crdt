@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::ptr::NonNull;
 
 #[repr(transparent)]
-pub(crate) struct EventHandler<T>(Box<Subscriptions<T>>);
+pub struct EventHandler<T>(Box<Subscriptions<T>>);
 
 pub type SubscriptionId = u32;
 
@@ -82,7 +82,7 @@ pub struct UpdateEvent {
 }
 
 impl UpdateEvent {
-    pub(crate) fn new(update: Vec<u8>) -> Self {
+    pub fn new(update: Vec<u8>) -> Self {
         UpdateEvent { update }
     }
 }

@@ -18,7 +18,7 @@ use std::hash::BuildHasherDefault;
 use std::rc::Rc;
 
 #[derive(Debug, Default, PartialEq)]
-pub(crate) struct UpdateBlocks {
+pub struct UpdateBlocks {
     clients: HashMap<ClientID, VecDeque<BlockCarrier>, BuildHasherDefault<ClientHasher>>,
 }
 
@@ -27,7 +27,7 @@ impl UpdateBlocks {
     @todo this should be refactored.
     I'm currently using this to add blocks to the Update
     */
-    pub(crate) fn add_block(&mut self, block: BlockCarrier) {
+    pub fn add_block(&mut self, block: BlockCarrier) {
         let e = self.clients.entry(block.id().client).or_default();
         e.push_back(block);
     }
@@ -38,13 +38,13 @@ impl UpdateBlocks {
 
     /// Returns an iterator that allows a traversal of all of the blocks
     /// which consist into this [Update].
-    pub(crate) fn blocks(&self) -> Blocks<'_> {
+    pub fn blocks(&self) -> Blocks<'_> {
         Blocks::new(self)
     }
 
     /// Returns an iterator that allows a traversal of all of the blocks
     /// which consist into this [Update].
-    pub(crate) fn into_blocks(self) -> IntoBlocks {
+    pub fn into_blocks(self) -> IntoBlocks {
         IntoBlocks::new(self)
     }
 }
@@ -85,8 +85,8 @@ impl std::fmt::Display for BlockCarrier {
 /// Update is conceptually similar to a block store itself, however the work patters are different.
 #[derive(Default, PartialEq)]
 pub struct Update {
-    pub(crate) blocks: UpdateBlocks,
-    pub(crate) delete_set: DeleteSet,
+    pub blocks: UpdateBlocks,
+    pub delete_set: DeleteSet,
 }
 
 impl Update {
@@ -94,7 +94,7 @@ impl Update {
         Self::default()
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.blocks.is_empty() && self.delete_set.is_empty()
     }
 
@@ -447,7 +447,7 @@ impl Update {
         }
     }
 
-    pub(crate) fn encode_diff<E: Encoder>(&self, remote_sv: &StateVector, encoder: &mut E) {
+    pub fn encode_diff<E: Encoder>(&self, remote_sv: &StateVector, encoder: &mut E) {
         let mut clients = HashMap::new();
         for (client, blocks) in self.blocks.clients.iter() {
             let remote_clock = remote_sv.get(client);
@@ -753,13 +753,13 @@ impl<T: Iterator> Memoizable for T {
 }
 
 #[derive(PartialEq)]
-pub(crate) enum BlockCarrier {
+pub enum BlockCarrier {
     Block(Box<Block>),
     Skip(BlockRange),
 }
 
 impl BlockCarrier {
-    pub(crate) fn splice(&mut self, offset: u32) -> Option<Self> {
+    pub fn splice(&mut self, offset: u32) -> Option<Self> {
         match self {
             BlockCarrier::Block(x) => {
                 let next = BlockPtr::from(x).splice(offset, OffsetKind::Utf16)?;
@@ -774,35 +774,35 @@ impl BlockCarrier {
             }
         }
     }
-    pub(crate) fn same_type(&self, other: &BlockCarrier) -> bool {
+    pub fn same_type(&self, other: &BlockCarrier) -> bool {
         match (self, other) {
             (BlockCarrier::Skip(_), BlockCarrier::Skip(_)) => true,
             (BlockCarrier::Block(a), BlockCarrier::Block(b)) => a.same_type(b),
             (_, _) => false,
         }
     }
-    pub(crate) fn id(&self) -> &ID {
+    pub fn id(&self) -> &ID {
         match self {
             BlockCarrier::Block(x) => x.id(),
             BlockCarrier::Skip(x) => &x.id,
         }
     }
 
-    pub(crate) fn len(&self) -> u32 {
+    pub fn len(&self) -> u32 {
         match self {
             BlockCarrier::Block(x) => x.len(),
             BlockCarrier::Skip(x) => x.len,
         }
     }
 
-    pub(crate) fn last_id(&self) -> ID {
+    pub fn last_id(&self) -> ID {
         match self {
             BlockCarrier::Block(x) => x.last_id(),
             BlockCarrier::Skip(x) => x.last_id(),
         }
     }
 
-    pub(crate) fn try_squash(&mut self, other: &BlockCarrier) -> bool {
+    pub fn try_squash(&mut self, other: &BlockCarrier) -> bool {
         match (self, other) {
             (BlockCarrier::Block(a), BlockCarrier::Block(b)) => {
                 BlockPtr::from(a).try_squash(BlockPtr::from(b))
@@ -926,7 +926,7 @@ impl Into<Store> for Update {
     }
 }
 
-pub(crate) struct Blocks<'a> {
+pub struct Blocks<'a> {
     current_client: std::vec::IntoIter<(&'a ClientID, &'a VecDeque<BlockCarrier>)>,
     current_block: Option<std::collections::vec_deque::Iter<'a, BlockCarrier>>,
 }
@@ -967,7 +967,7 @@ impl<'a> Iterator for Blocks<'a> {
     }
 }
 
-pub(crate) struct IntoBlocks {
+pub struct IntoBlocks {
     current_client: std::vec::IntoIter<(ClientID, VecDeque<BlockCarrier>)>,
     current_block: Option<std::collections::vec_deque::IntoIter<BlockCarrier>>,
 }

@@ -6,7 +6,7 @@ use crate::{Transaction, ID};
 use std::ops::DerefMut;
 
 #[derive(Debug, Clone)]
-pub(crate) struct BlockIter {
+pub struct BlockIter {
     branch: BranchPtr,
     index: u32,
     rel: u32,
@@ -350,7 +350,7 @@ impl BlockIter {
         self.next_item = item;
     }
 
-    pub(crate) fn slice<T>(
+    pub fn slice<T>(
         &mut self,
         txn: &mut Transaction,
         mut len: u32,
@@ -427,7 +427,7 @@ impl BlockIter {
         }
     }
 
-    pub(crate) fn read_value(&mut self, txn: &mut Transaction) -> Option<Value> {
+    pub fn read_value(&mut self, txn: &mut Transaction) -> Option<Value> {
         let mut res = self.slice::<ArraySliceConcat>(txn, 1, Vec::default())?;
         res.pop()
     }
@@ -536,7 +536,7 @@ impl StackItem {
     }
 }
 
-pub(crate) trait SliceConcat {
+pub trait SliceConcat {
     fn slice(content: &mut ItemContent, offset: usize, len: usize) -> Vec<Value>;
     fn concat(a: Vec<Value>, b: Vec<Value>) -> Vec<Value>;
 }

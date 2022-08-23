@@ -129,29 +129,28 @@ impl IdRange {
             if !ranges.is_empty() {
                 ranges.sort_by(|a, b| a.start.cmp(&b.start));
                 let mut new_len = 1;
-               
-                    let len = ranges.len() as isize;
-                    let head = ranges.as_mut_ptr();
-                    let mut current = unsafe { head.as_mut().unwrap() };
-                    let mut i = 1;
-                    while i < len {
-                        let next = unsafe { head.offset(i).as_ref().unwrap() };
-                        if !Self::try_join(current, next) {
-                            // current and next are disjoined eg. [0,5) & [6,9)
 
-                            // move current pointer one index to the left: by using new_len we
-                            // squash ranges possibly already merged to current
-                            current = unsafe { head.offset(new_len).as_mut().unwrap() };
+                let len = ranges.len() as isize;
+                let head = ranges.as_mut_ptr();
+                let mut current = unsafe { head.as_mut().unwrap() };
+                let mut i = 1;
+                while i < len {
+                    let next = unsafe { head.offset(i).as_ref().unwrap() };
+                    if !Self::try_join(current, next) {
+                        // current and next are disjoined eg. [0,5) & [6,9)
 
-                            // make next a new current
-                            current.start = next.start;
-                            current.end = next.end;
-                            new_len += 1;
-                        }
+                        // move current pointer one index to the left: by using new_len we
+                        // squash ranges possibly already merged to current
+                        current = unsafe { head.offset(new_len).as_mut().unwrap() };
 
-                        i += 1;
+                        // make next a new current
+                        current.start = next.start;
+                        current.end = next.end;
+                        new_len += 1;
                     }
-                
+
+                    i += 1;
+                }
 
                 if new_len == 1 {
                     *self = IdRange::Continuous(ranges[0].clone())
@@ -287,7 +286,7 @@ impl<'a> DoubleEndedIterator for IdRangeIter<'a> {
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct IdSet(HashMap<ClientID, IdRange, BuildHasherDefault<ClientHasher>>);
 
-pub(crate) type Iter<'a> = std::collections::hash_map::Iter<'a, ClientID, IdRange>;
+pub type Iter<'a> = std::collections::hash_map::Iter<'a, ClientID, IdRange>;
 
 //TODO: I'd say we should split IdSet and DeleteSet into two structures. While DeleteSet can be
 // implemented in terms of IdSet, it has more specific methods (related to deletion process), while
@@ -302,7 +301,7 @@ impl IdSet {
         self.0.len()
     }
 
-    pub(crate) fn iter(&self) -> Iter<'_> {
+    pub fn iter(&self) -> Iter<'_> {
         self.0.iter()
     }
 
@@ -516,7 +515,7 @@ impl DeleteSet {
         self.0.squash()
     }
 
-    pub(crate) fn try_squash_with(&mut self, store: &mut Store) {
+    pub fn try_squash_with(&mut self, store: &mut Store) {
         // try to merge deleted / gc'd items
         for (client, range) in self.iter() {
             if let Some(blocks) = store.blocks.get_mut(client) {

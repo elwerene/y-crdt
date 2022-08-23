@@ -484,7 +484,7 @@ impl TestPeer {
     }
 }
 
-pub(crate) trait RngExt: RngCore {
+pub trait RngExt: RngCore {
     fn between(&mut self, x: u32, y: u32) -> u32 {
         let a = x.min(y);
         let b = x.max(y);

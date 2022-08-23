@@ -96,24 +96,24 @@ impl ID {
 /// which allows to faster locate block it points to within a block store.
 #[repr(transparent)]
 #[derive(Clone, Copy, Hash)]
-pub(crate) struct BlockPtr(NonNull<Block>);
+pub struct BlockPtr(NonNull<Block>);
 
 impl BlockPtr {
-    pub(crate) fn delete_as_cleanup(&self, txn: &mut Transaction, is_local: bool) {
+    pub fn delete_as_cleanup(&self, txn: &mut Transaction, is_local: bool) {
         txn.delete(*self);
         if is_local {
             txn.delete_set.insert(*self.id(), self.len());
         }
     }
 
-    pub(crate) fn is_countable(&self) -> bool {
+    pub fn is_countable(&self) -> bool {
         match self.deref() {
             Block::Item(item) => item.is_countable(),
             Block::GC(_) => false,
         }
     }
 
-    pub(crate) fn splice(&mut self, offset: u32, encoding: OffsetKind) -> Option<Box<Block>> {
+    pub fn splice(&mut self, offset: u32, encoding: OffsetKind) -> Option<Box<Block>> {
         let self_ptr = self.clone();
         if offset == 0 {
             None
@@ -425,7 +425,7 @@ impl BlockPtr {
         }
     }
 
-    pub(crate) fn gc(&mut self, parent_gced: bool) {
+    pub fn gc(&mut self, parent_gced: bool) {
         if let Block::Item(item) = self.deref_mut() {
             if item.is_deleted() {
                 item.content.gc();
@@ -478,7 +478,7 @@ impl BlockPtr {
         }
     }
 
-    pub(crate) fn as_branch(self) -> Option<BranchPtr> {
+    pub fn as_branch(self) -> Option<BranchPtr> {
         let item = self.as_item()?;
         if let ItemContent::Type(branch) = &item.content {
             Some(BranchPtr::from(branch))
@@ -525,7 +525,7 @@ impl PartialEq for BlockPtr {
 
 /// An enum containing all supported block variants.
 #[derive(PartialEq)]
-pub(crate) enum Block {
+pub enum Block {
     /// An active block containing user data.
     Item(Item),
 
@@ -738,7 +738,7 @@ impl Block {
 /// A helper structure that's used to precisely describe a location of an [Item] to be inserted in
 /// relation to its neighbors and parent.
 #[derive(Debug)]
-pub(crate) struct ItemPosition {
+pub struct ItemPosition {
     pub parent: types::TypePtr,
     pub left: Option<BlockPtr>,
     pub right: Option<BlockPtr>,
@@ -871,7 +871,7 @@ impl Into<u8> for ItemFlags {
 /// required for a potential conflict resolution as well as extra fields used for joining blocks
 /// together as a part of indexed sequences or maps.
 #[derive(PartialEq)]
-pub(crate) struct Item {
+pub struct Item {
     /// Unique identifier of current item.
     pub id: ID,
 
@@ -966,7 +966,7 @@ impl std::fmt::Display for BlockRange {
 }
 
 impl Item {
-    pub(crate) fn new(
+    pub fn new(
         id: ID,
         left: Option<BlockPtr>,
         origin: Option<ID>,
@@ -1020,7 +1020,7 @@ impl Item {
         self.info.is_countable()
     }
 
-    pub(crate) fn mark_as_deleted(&mut self) {
+    pub fn mark_as_deleted(&mut self) {
         self.info.set_deleted()
     }
 
@@ -1028,7 +1028,7 @@ impl Item {
     /// blocks to be already present in block store - which may not be the case during block
     /// decoding. We decode entire update first, and apply individual blocks second, hence
     /// repair function is called before applying the block rather than on decode.
-    pub(crate) fn repair(&mut self, store: &mut Store) {
+    pub fn repair(&mut self, store: &mut Store) {
         if let Some(origin) = self.origin.as_ref() {
             self.left = store.blocks.get_item_clean_end(origin);
         }
@@ -1153,7 +1153,7 @@ impl SplittableString {
     /// Maps given offset onto block offset. This means, that given an `offset` provided
     /// in given `encoding` we want the output as a UTF-16 compatible offset (required
     /// by Yjs for compatibility reasons).
-    pub(crate) fn block_offset(&self, offset: u32, kind: OffsetKind) -> u32 {
+    pub fn block_offset(&self, offset: u32, kind: OffsetKind) -> u32 {
         match kind {
             OffsetKind::Utf16 => offset,
             OffsetKind::Bytes => {
@@ -1536,7 +1536,7 @@ impl ItemContent {
         }
     }
 
-    pub(crate) fn splice(&mut self, offset: usize, encoding: OffsetKind) -> Option<ItemContent> {
+    pub fn splice(&mut self, offset: usize, encoding: OffsetKind) -> Option<ItemContent> {
         match self {
             ItemContent::Any(value) => {
                 let (left, right) = value.split_at(offset);
@@ -1604,7 +1604,7 @@ impl ItemContent {
         }
     }
 
-    pub(crate) fn gc(&mut self) {
+    pub fn gc(&mut self) {
         match self {
             ItemContent::Type(branch) => {
                 let mut curr = branch.start.take();
@@ -1822,7 +1822,7 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct PrelimString(pub SmallString<[u8; 8]>);
+pub struct PrelimString(pub SmallString<[u8; 8]>);
 
 impl Prelim for PrelimString {
     fn into_content(self, _txn: &mut Transaction) -> (ItemContent, Option<Self>) {
@@ -1833,7 +1833,7 @@ impl Prelim for PrelimString {
 }
 
 #[derive(Debug)]
-pub(crate) struct PrelimEmbed(pub Any);
+pub struct PrelimEmbed(pub Any);
 
 impl Prelim for PrelimEmbed {
     fn into_content(self, _txn: &mut Transaction) -> (ItemContent, Option<Self>) {
