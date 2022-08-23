@@ -355,7 +355,12 @@ impl XmlFragment {
         XmlFragment(inner)
     }
 
-    pub fn inner(&self) -> BranchPtr {
+    pub fn debug(&self) -> String {
+        let value: Value = self.0.into();
+        format!("{value:?}")
+    }
+
+    fn inner(&self) -> BranchPtr {
         self.0
     }
 
