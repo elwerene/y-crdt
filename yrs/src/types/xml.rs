@@ -485,6 +485,12 @@ impl AsMut<Branch> for XmlFragment {
     }
 }
 
+impl From<BranchPtr> for XmlFragment {
+    fn from(inner: BranchPtr) -> Self {
+        XmlFragment(inner)
+    }
+}
+
 /// An iterator over [XmlElement] successors, working in a recursive depth-first manner.
 pub struct TreeWalker<'a> {
     current: Option<&'a Item>,

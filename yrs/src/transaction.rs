@@ -9,7 +9,7 @@ use crate::types::array::Array;
 use crate::types::xml::{XmlElement, XmlText};
 use crate::types::{
     BranchPtr, Event, Events, Map, Text, TypePtr, TYPE_REFS_ARRAY, TYPE_REFS_MAP, TYPE_REFS_TEXT,
-    TYPE_REFS_XML_ELEMENT, TYPE_REFS_XML_TEXT,
+    TYPE_REFS_XML_ELEMENT, TYPE_REFS_XML_FRAGMENT, TYPE_REFS_XML_TEXT,
 };
 use crate::update::Update;
 use std::collections::{HashMap, HashSet};
@@ -182,6 +182,14 @@ impl Transaction {
             .get_or_create_type(name, None, TYPE_REFS_XML_TEXT);
         c.store = Some(self.store.clone());
         XmlText::from(c)
+    }
+
+    pub fn get_xml_fragment(&mut self, name: &str) -> XmlFragment {
+        let mut c = self
+            .store_mut()
+            .get_or_create_type(name, None, TYPE_REFS_XML_FRAGMENT);
+        c.store = Some(self.store.clone());
+        XmlFragment::from(c)
     }
 
     /// Encodes changes made within the scope of the current transaction using lib0 v1 encoding.
