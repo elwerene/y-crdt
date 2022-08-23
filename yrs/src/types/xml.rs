@@ -78,6 +78,10 @@ impl XmlElement {
         self.0.inner()
     }
 
+    pub fn debug(&self) -> String {
+        self.0.debug()
+    }
+
     /// Converts current XML node into a textual representation. This representation if flat, it
     /// doesn't include any indentation.
     pub fn to_string(&self) -> String {
