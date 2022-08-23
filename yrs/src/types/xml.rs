@@ -667,6 +667,18 @@ impl XmlText {
         self.0.inner()
     }
 
+    pub fn debug(&self) -> String {
+        let mut start = self.inner().start;
+        let mut s = String::new();
+        while let Some(Block::Item(item)) = start.as_deref() {
+            if !item.is_deleted() {
+                s.push_str(&format!("{:?}", item.content));
+            }
+            start = item.right.clone();
+        }
+        s
+    }
+
     pub fn value(&self) -> Value {
         let value: Value = self.inner().into();
         value
