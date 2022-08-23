@@ -355,7 +355,7 @@ impl XmlFragment {
         XmlFragment(inner)
     }
 
-    fn inner(&self) -> BranchPtr {
+    pub fn inner(&self) -> BranchPtr {
         self.0
     }
 
