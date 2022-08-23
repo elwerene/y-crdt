@@ -61,5 +61,6 @@ pub use crate::types::map::PrelimMap;
 pub use crate::types::text::Text;
 pub use crate::types::xml::Xml;
 pub use crate::types::xml::XmlElement;
+pub use crate::types::xml::XmlFragment;
 pub use crate::types::xml::XmlText;
 pub use crate::update::Update;
